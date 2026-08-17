@@ -19,13 +19,6 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: Setup Virtual Display (Fixes AWT Error)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          Xvfb :99 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -35,14 +28,30 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Fix Files and Build
+      - name: Setup Virtual Display
         run: |
-          # 1. API Key & Memory Setup
-          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
-          mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" > ~/.gradle/gradle.properties
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
 
-          # 2. Google Services Dummy File Fix
+      - name: Ultimate Code Fix (Versions & Keystore)
+        run: |
+          # 1. API Key Setup
+          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
+          
+          # 2. Memory & AWT Fix (This fixes the NullPointerException)
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
+          
+          # 3. Fix Corrupted Versions in TOML file (This fixes the Compose mismatch)
+          if [ -f gradle/libs.versions.toml ]; then
+            sed -i 's/agp = .*/agp = "8.5.0"/' gradle/libs.versions.toml
+            sed -i 's/kotlin = .*/kotlin = "2.0.0"/' gradle/libs.versions.toml
+            sed -i 's/googleDevtoolsKsp = .*/googleDevtoolsKsp = "2.0.0-1.0.21"/' gradle/libs.versions.toml
+          fi
+          
+          # 4. Google Services Dummy File Fix
           mkdir -p app
           cat << 'EOF' > app/google-services.json
           {
@@ -53,31 +62,17 @@ jobs:
             } ]
           }
           EOF
-
-          # 3. Keystore Fix
+          
+          # 5. Keystore Fix
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
-
-          # 4. Kotlin Compose Version Mismatch Fix
-          cat << 'EOF' > compose-fix.gradle
-          allprojects {
-              afterEvaluate { project ->
-                  project.tasks.configureEach { task ->
-                      if (task.name.startsWith("compile") && task.name.endsWith("Kotlin")) {
-                          try {
-                              task.kotlinOptions.freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"]
-                          } catch (Exception e) {}
-                      }
-                  }
-              }
-          }
-          EOF
-
-          # 5. Build APK
-          gradle assembleDebug --no-daemon --stacktrace --init-script compose-fix.gradle
+          
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: "**/*.apk"
+
