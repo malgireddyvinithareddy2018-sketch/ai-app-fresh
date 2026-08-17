@@ -40,15 +40,15 @@ jobs:
           # 1. API Key Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           
-          # 2. Memory & AWT Fix (This fixes the NullPointerException)
+          # 2. Memory & AWT Fix
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
           
-          # 3. Fix Corrupted Versions in TOML file (This fixes the Compose mismatch)
+          # 3. SAFE Version Downgrade in TOML file (Fixes the TOML Parse Error)
           if [ -f gradle/libs.versions.toml ]; then
-            sed -i 's/agp = .*/agp = "8.5.0"/' gradle/libs.versions.toml
-            sed -i 's/kotlin = .*/kotlin = "2.0.0"/' gradle/libs.versions.toml
-            sed -i 's/googleDevtoolsKsp = .*/googleDevtoolsKsp = "2.0.0-1.0.21"/' gradle/libs.versions.toml
+            sed -i 's/^agp = .*/agp = "8.5.0"/' gradle/libs.versions.toml
+            sed -i 's/^kotlin = .*/kotlin = "2.0.0"/' gradle/libs.versions.toml
+            sed -i 's/^googleDevtoolsKsp = .*/googleDevtoolsKsp = "2.0.0-1.0.21"/' gradle/libs.versions.toml
           fi
           
           # 4. Google Services Dummy File Fix
@@ -75,4 +75,3 @@ jobs:
         with:
           name: app-debug-apk
           path: "**/*.apk"
-
