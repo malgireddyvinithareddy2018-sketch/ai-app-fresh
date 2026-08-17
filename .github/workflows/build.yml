@@ -15,8 +15,9 @@ jobs:
 
       - name: Unzip Project File
         run: |
-          ZIP_FILE=$(ls *.zip | head -n 1)
-          unzip -q "$ZIP_FILE" -d my_project
+          if ls *.zip 1> /dev/null 2>&1; then
+            unzip -q *.zip
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -27,77 +28,35 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Find and Build Project
+      - name: Fix Files and Build
         run: |
-          PROJECT_ROOT=$(dirname "$(find my_project -name "settings.gradle*" | head -n 1)")
-          cd "$PROJECT_ROOT"
-          
-          # 1. Base Setup
+          # 1. API Key & Memory Fix
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=true" > ~/.gradle/gradle.properties
           echo "ksp.incremental=false" >> ~/.gradle/gradle.properties
-          
-          # 2. Perfect google-services.json
-          APP_DIR=$(grep -rl "com.android.application" . | grep -E "build.gradle" | head -n 1 | xargs dirname)
-          if [ -z "$APP_DIR" ]; then APP_DIR="app"; fi
-          mkdir -p "$APP_DIR"
-          cat << 'EOF' > "$APP_DIR/google-services.json"
+
+          # 2. Google Services Fix
+          mkdir -p app
+          cat << 'EOF' > app/google-services.json
           {
-            "project_info": { "project_number": "123456789012", "project_id": "dummy-project" },
+            "project_info": { "project_number": "1", "project_id": "dummy" },
             "client": [ {
-              "client_info": { "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890", "android_client_info": { "package_name": "com.aistudio.aivideocreator.hub.v3x" } },
-              "oauth_client": [],
-              "api_key": [ { "current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummyKeyD" } ],
-              "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
-            } ],
-            "configuration_version": "1"
+              "client_info": { "mobilesdk_app_id": "1:1:android:1", "android_client_info": { "package_name": "com.aistudio.aivideocreator.hub.v3x" } },
+              "api_key": [ { "current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummyKeyD" } ]
+            } ]
           }
           EOF
-          
-          # 3. Dummy Keystore
-          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          find . -type f -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
-          find . -type f -name "build.gradle*" -exec sed -i 's/signingConfig signingConfigs.debugConfig//g' {} +
-          
-          # 4. Kotlin & Compose Version Auto-Fixer
-          cat << 'EOF' > auto_fix.py
-          import os, re
-          kv = "1.8.0"
-          for root, dirs, files in os.walk("."):
-              for file in files:
-                  if file.endswith((".gradle", ".gradle.kts", ".toml")):
-                      try:
-                          with open(os.path.join(root, file), "r", encoding="utf-8") as f:
-                              m = re.search(r'(?:kotlin|org\.jetbrains\.kotlin\.android|kotlin-android)[^0-9]+([1-2]\.[0-9]+\.[0-9]+)', f.read())
-                              if m: kv = m.group(1)
-                      except: pass
-          
-          mapping = {"1.9.24":"1.5.14", "1.9.23":"1.5.11", "1.9.22":"1.5.10", "1.9.21":"1.5.7", "1.9.20":"1.5.4", "1.9.10":"1.5.3", "1.9.0":"1.5.1", "1.8.22":"1.4.8", "1.8.21":"1.4.7", "1.8.20":"1.4.6", "1.8.10":"1.4.2", "1.8.0":"1.4.0"}
-          cv = mapping.get(kv)
-          if not cv:
-              for k, v in mapping.items():
-                  if kv.startswith(k[:4]): cv = v; break
-          if not cv: cv = "1.4.0"
-          
-          for root, dirs, files in os.walk("."):
-              for file in files:
-                  if file.endswith((".gradle", ".gradle.kts")):
-                      path = os.path.join(root, file)
-                      try:
-                          with open(path, "r", encoding="utf-8") as f: content = f.read()
-                          content = re.sub(r'kotlinCompilerExtensionVersion[\s=]+["\'][0-9.]+["\']', f'kotlinCompilerExtensionVersion = "{cv}"', content)
-                          with open(path, "w", encoding="utf-8") as f: f.write(content)
-                      except: pass
-          EOF
-          python3 auto_fix.py
-          
-          # 5. Build
+
+          # 3. Keystore Fix
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
+          find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
+
+          # 4. Build APK
           gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: my_project/**/app/build/outputs/apk/debug/*.apk
-
+          path: "**/*.apk"
