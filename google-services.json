@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "779822527217",
+    "project_id": "ai-video-hub-78006",
+    "storage_bucket": "ai-video-hub-78006.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:779822527217:android:faa037c3fb6a15206faf50",
+        "android_client_info": {
+          "package_name": "com.aistudio.aivideocreator.hub.v3x"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBj8G2Om3s-6PelJjzPthm_bAKqeNw7-sU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
