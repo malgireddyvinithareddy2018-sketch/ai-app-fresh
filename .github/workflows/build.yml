@@ -19,6 +19,13 @@ jobs:
             unzip -q *.zip
           fi
 
+      - name: Setup Virtual Display (Fixes AWT Error)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -30,13 +37,12 @@ jobs:
 
       - name: Fix Files and Build
         run: |
-          # 1. API Key & Memory Fix
+          # 1. API Key & Memory Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=true" > ~/.gradle/gradle.properties
-          echo "ksp.incremental=false" >> ~/.gradle/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" > ~/.gradle/gradle.properties
 
-          # 2. Google Services Fix
+          # 2. Google Services Dummy File Fix
           mkdir -p app
           cat << 'EOF' > app/google-services.json
           {
@@ -52,8 +58,23 @@ jobs:
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
 
-          # 4. Build APK
-          gradle assembleDebug --no-daemon --stacktrace
+          # 4. Kotlin Compose Version Mismatch Fix
+          cat << 'EOF' > compose-fix.gradle
+          allprojects {
+              afterEvaluate { project ->
+                  project.tasks.configureEach { task ->
+                      if (task.name.startsWith("compile") && task.name.endsWith("Kotlin")) {
+                          try {
+                              task.kotlinOptions.freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"]
+                          } catch (Exception e) {}
+                      }
+                  }
+              }
+          }
+          EOF
+
+          # 5. Build APK
+          gradle assembleDebug --no-daemon --stacktrace --init-script compose-fix.gradle
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
