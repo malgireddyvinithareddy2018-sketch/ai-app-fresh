@@ -35,7 +35,7 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Clean Fixes (No Version Downgrades)
+      - name: Clean Fixes (API 36)
         run: |
           # 1. API Key Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
@@ -46,8 +46,8 @@ jobs:
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
-          # 3. FIX SCRIPT COMPILATION ERROR (Set compileSdk to 35 to support latest libraries)
-          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 35/g' {} +
+          # 3. FIX SCRIPT COMPILATION ERROR (Set compileSdk to 36)
+          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
           
           # 4. Google Services Dummy File Fix
           mkdir -p app
