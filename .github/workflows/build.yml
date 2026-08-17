@@ -35,14 +35,16 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Ultimate Code Fix (Versions & Keystore)
+      - name: Ultimate Code Fix (Versions, Keystore & AndroidX)
         run: |
           # 1. API Key Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           
-          # 2. Memory & AWT Fix
+          # 2. Memory, AWT & AndroidX Fix
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
+          echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
+          echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
           # 3. SAFE Version Downgrade in TOML file
           if [ -f gradle/libs.versions.toml ]; then
