@@ -28,17 +28,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Setup Virtual Display (Fixes AWT Error)
+      - name: Setup Virtual Display
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
           Xvfb :99 -screen 0 1024x768x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Perfect Clean Fix (No Downgrades)
+      - name: Ultimate Clean Fix (Real Keys & API 36)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # 1. API Key Setup
-          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
+          # 1. Real API Key Setup
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
           
           # 2. Memory & AndroidX Fix
           mkdir -p ~/.gradle
@@ -49,22 +51,16 @@ jobs:
           # 3. FIX SCRIPT COMPILATION ERROR (Force API 36)
           find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
           
-          # 4. FIX AGP VERSION (Update AGP to match API 36)
+          # 4. FIX AGP VERSION
           if [ -f gradle/libs.versions.toml ]; then
             sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
           fi
           
-          # 5. Google Services Dummy File Fix
-          mkdir -p app
-          cat << 'EOF' > app/google-services.json
-          {
-            "project_info": { "project_number": "1", "project_id": "dummy" },
-            "client": [ {
-              "client_info": { "mobilesdk_app_id": "1:1:android:1", "android_client_info": { "package_name": "com.aistudio.aivideocreator.hub.v3x" } },
-              "api_key": [ { "current_key": "AIzaSyDummyKeyDummyKeyDummyKeyDummyKeyD" } ]
-            } ]
-          }
-          EOF
+          # 5. Move google-services.json to app folder if uploaded to root
+          if [ -f google-services.json ]; then
+            mkdir -p app
+            mv google-services.json app/
+          fi
           
           # 6. Keystore Fix
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
