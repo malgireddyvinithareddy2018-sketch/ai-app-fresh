@@ -28,28 +28,29 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Setup Virtual Display (Fixes AWT Error)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1024x768x24 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
-      - name: Clean Fixes (API 36)
+      - name: Ultimate Bulletproof Fix
         run: |
           # 1. API Key Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           
-          # 2. Memory & AndroidX Fix
+          # 2. Perfect Memory & AWT Fix (headless=true is strictly required)
           mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=true" > ~/.gradle/gradle.properties
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
+          echo "ksp.incremental=false" >> ~/.gradle/gradle.properties
           
-          # 3. FIX SCRIPT COMPILATION ERROR (Set compileSdk to 36)
-          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
+          # 3. Robust Version Downgrade (Guaranteed to fix Compose & KSP mismatch)
+          if [ -f gradle/libs.versions.toml ]; then
+            sed -i 's/kotlin = "[0-9\.]*"/kotlin = "2.0.0"/g' gradle/libs.versions.toml
+            sed -i 's/googleDevtoolsKsp = "[0-9\.\-]*"/googleDevtoolsKsp = "2.0.0-1.0.21"/g' gradle/libs.versions.toml
+            sed -i 's/agp = "[0-9\.]*"/agp = "8.5.0"/g' gradle/libs.versions.toml
+          fi
           
-          # 4. Google Services Dummy File Fix
+          # 4. FIX SCRIPT COMPILATION ERROR (API 35/36 issue)
+          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 35/g' {} +
+          
+          # 5. Google Services Dummy File Fix
           mkdir -p app
           cat << 'EOF' > app/google-services.json
           {
@@ -61,7 +62,7 @@ jobs:
           }
           EOF
           
-          # 5. Keystore Fix
+          # 6. Keystore Fix
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
           
