@@ -44,14 +44,17 @@ jobs:
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
           
-          # 3. SAFE Version Downgrade in TOML file (Fixes the TOML Parse Error)
+          # 3. SAFE Version Downgrade in TOML file
           if [ -f gradle/libs.versions.toml ]; then
             sed -i 's/^agp = .*/agp = "8.5.0"/' gradle/libs.versions.toml
             sed -i 's/^kotlin = .*/kotlin = "2.0.0"/' gradle/libs.versions.toml
             sed -i 's/^googleDevtoolsKsp = .*/googleDevtoolsKsp = "2.0.0-1.0.21"/' gradle/libs.versions.toml
           fi
           
-          # 4. Google Services Dummy File Fix
+          # 4. FIX SCRIPT COMPILATION ERROR (compileSdk issue)
+          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 34/g' {} +
+          
+          # 5. Google Services Dummy File Fix
           mkdir -p app
           cat << 'EOF' > app/google-services.json
           {
@@ -63,7 +66,7 @@ jobs:
           }
           EOF
           
-          # 5. Keystore Fix
+          # 6. Keystore Fix
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
           
