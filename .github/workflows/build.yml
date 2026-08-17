@@ -28,27 +28,31 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Ultimate Bulletproof Fix
+      - name: Setup Virtual Display (Fixes AWT Error)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Perfect Clean Fix (No Downgrades)
         run: |
           # 1. API Key Setup
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env
           
-          # 2. Perfect Memory & AWT Fix (headless=true is strictly required)
+          # 2. Memory & AndroidX Fix
           mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=true" > ~/.gradle/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
-          echo "ksp.incremental=false" >> ~/.gradle/gradle.properties
           
-          # 3. Robust Version Downgrade (Guaranteed to fix Compose & KSP mismatch)
+          # 3. FIX SCRIPT COMPILATION ERROR (Force API 36)
+          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
+          
+          # 4. FIX AGP VERSION (Update AGP to match API 36)
           if [ -f gradle/libs.versions.toml ]; then
-            sed -i 's/kotlin = "[0-9\.]*"/kotlin = "2.0.0"/g' gradle/libs.versions.toml
-            sed -i 's/googleDevtoolsKsp = "[0-9\.\-]*"/googleDevtoolsKsp = "2.0.0-1.0.21"/g' gradle/libs.versions.toml
-            sed -i 's/agp = "[0-9\.]*"/agp = "8.5.0"/g' gradle/libs.versions.toml
+            sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
           fi
-          
-          # 4. FIX SCRIPT COMPILATION ERROR (API 35/36 issue)
-          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 35/g' {} +
           
           # 5. Google Services Dummy File Fix
           mkdir -p app
