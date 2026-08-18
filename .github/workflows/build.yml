@@ -19,9 +19,15 @@ jobs:
             unzip -q *.zip
           fi
 
+      - name: Setup Virtual Display (Fix KSP/AWT Compiler Crash)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          Xvfb :99 -screen 0 1024x768x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
       - name: The Brahmastra (Safe UI Rewrite)
         run: |
-          # 1. మన కొత్త డిజైన్ ని యాడ్ చేయడం
           MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
           if [ -n "$MAIN_ACTIVITY" ]; then
             PACKAGE_NAME=$(grep "^package " "$MAIN_ACTIVITY" | head -n 1)
@@ -88,7 +94,6 @@ jobs:
             echo '}' >> "$MAIN_ACTIVITY"
           fi
           
-          # 2. పాత క్రాష్ రాకుండా ఆపడం
           APP_CLASS=$(find . -name "MainApplication.kt" | head -n 1)
           if [ -n "$APP_CLASS" ]; then
             PACKAGE_NAME=$(grep "^package " "$APP_CLASS" | head -n 1)
@@ -120,7 +125,12 @@ jobs:
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
           
-          gradle assembleDebug --no-daemon --stacktrace
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          else
+            gradle assembleDebug --no-daemon --stacktrace
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
