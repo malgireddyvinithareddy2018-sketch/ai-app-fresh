@@ -19,7 +19,7 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: Setup Virtual Display (Fix KSP/AWT Compiler Crash)
+      - name: Setup Virtual Display
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb
@@ -28,6 +28,7 @@ jobs:
 
       - name: The Brahmastra (Safe UI Rewrite)
         run: |
+          # 1. Rewrite MainActivity safely
           MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
           if [ -n "$MAIN_ACTIVITY" ]; then
             PACKAGE_NAME=$(grep "^package " "$MAIN_ACTIVITY" | head -n 1)
@@ -94,6 +95,7 @@ jobs:
             echo '}' >> "$MAIN_ACTIVITY"
           fi
           
+          # 2. Empty MainApplication to prevent Firebase/Gemini runtime crashes
           APP_CLASS=$(find . -name "MainApplication.kt" | head -n 1)
           if [ -n "$APP_CLASS" ]; then
             PACKAGE_NAME=$(grep "^package " "$APP_CLASS" | head -n 1)
@@ -122,6 +124,16 @@ jobs:
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
+          # Restore the original working sed commands to fix Compose compatibility and missing files!
+          find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
+          if [ -f gradle/libs.versions.toml ]; then
+            sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
+          fi
+          if [ -f google-services.json ]; then
+            mkdir -p app
+            mv google-services.json app/
+          fi
+          
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
           
@@ -137,3 +149,4 @@ jobs:
         with:
           name: app-debug-apk
           path: "**/*.apk"
+
