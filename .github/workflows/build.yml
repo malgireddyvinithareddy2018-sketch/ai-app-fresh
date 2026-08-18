@@ -19,117 +19,82 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: The Brahmastra (Rewrite App completely to our UI)
+      - name: The Brahmastra (Bullet-proof UI Rewrite)
         run: |
           MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
           if [ -n "$MAIN_ACTIVITY" ]; then
-            # పాత కోడ్ లో ఉన్న ప్యాకేజీ పేరును సేవ్ చేయడం
             PACKAGE_NAME=$(grep "^package " "$MAIN_ACTIVITY" | head -n 1)
-            
-            # పాత కోడ్ మొత్తం తీసేసి, ఫస్ట్ మన కొత్త డిజైన్ ఓపెన్ అయ్యేలా చేయడం
             echo "$PACKAGE_NAME" > "$MAIN_ACTIVITY"
-            cat << 'EOF' >> "$MAIN_ACTIVITY"
-            
-            import android.os.Bundle
-            import androidx.activity.ComponentActivity
-            import androidx.activity.compose.setContent
-            import androidx.compose.foundation.background
-            import androidx.compose.foundation.layout.*
-            import androidx.compose.foundation.shape.RoundedCornerShape
-            import androidx.compose.material.icons.Icons
-            import androidx.compose.material.icons.filled.ArrowBack
-            import androidx.compose.material3.*
-            import androidx.compose.runtime.*
-            import androidx.compose.ui.Alignment
-            import androidx.compose.ui.Modifier
-            import androidx.compose.ui.graphics.Color
-            import androidx.compose.ui.text.font.FontWeight
-            import androidx.compose.ui.unit.dp
-            import androidx.compose.ui.unit.sp
-
-            class MainActivity : ComponentActivity() {
-                override fun onCreate(savedInstanceState: Bundle?) {
-                    super.onCreate(savedInstanceState)
-                    setContent { // ఇది యాప్ ఓపెన్ అవ్వగానే మన స్క్రీన్ చూపించే కమాండ్
-                        MaterialTheme {
-                            AiScriptMakerScreen(onBackClick = { finish() })
-                        }
-                    }
-                }
-            }
-
-            @Composable
-            fun AiScriptMakerScreen(onBackClick: () -> Unit) {
-                var topic by remember { mutableStateOf("") }
-                var selectedPlatform by remember { mutableStateOf("Insta Reel") }
-                var showResult by remember { mutableStateOf(false) }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFF121212))
-                        .padding(16.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                        }
-                        Text(text = "✨ AI Script & Idea Maker", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
-                    OutlinedTextField(
-                        value = topic,
-                        onValueChange = { topic = it },
-                        label = { Text("Enter your topic (e.g., Weight loss)", color = Color.Gray) },
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color(0xFF00E676),
-                            unfocusedIndicatorColor = Color.DarkGray,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Select Platform:", color = Color.White, fontSize = 16.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("Insta Reel", "YouTube", "Shorts").forEach { platform ->
-                            Button(
-                                onClick = { selectedPlatform = platform },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (selectedPlatform == platform) Color(0xFF00E676) else Color.DarkGray
-                                )
-                            ) {
-                                Text(platform, color = if (selectedPlatform == platform) Color.Black else Color.White)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Button(
-                        onClick = { showResult = true },
-                        modifier = Modifier.fillMaxWidth().height(55.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Generate Magic 🪄", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    if (showResult && topic.isNotEmpty()) {
-                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)), modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("🪝 Hook: Are you making this simple mistake?", color = Color(0xFF00E676), fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("📜 Script: Welcome back! Today we talk about $topic...", color = Color.White)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("🏷️ Tags: #$topic #viral", color = Color.Cyan)
-                            }
-                        }
-                    }
-                }
-            }
-            EOF
+            echo 'import android.os.Bundle' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.activity.ComponentActivity' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.activity.compose.setContent' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.foundation.background' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.foundation.layout.*' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.foundation.shape.RoundedCornerShape' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.material.icons.Icons' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.material.icons.filled.ArrowBack' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.material3.*' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.runtime.*' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.Alignment' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.Modifier' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.graphics.Color' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.text.font.FontWeight' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.unit.dp' >> "$MAIN_ACTIVITY"
+            echo 'import androidx.compose.ui.unit.sp' >> "$MAIN_ACTIVITY"
+            echo 'class MainActivity : ComponentActivity() {' >> "$MAIN_ACTIVITY"
+            echo '    override fun onCreate(savedInstanceState: Bundle?) {' >> "$MAIN_ACTIVITY"
+            echo '        super.onCreate(savedInstanceState)' >> "$MAIN_ACTIVITY"
+            echo '        setContent {' >> "$MAIN_ACTIVITY"
+            echo '            MaterialTheme { AiScriptMakerScreen(onBackClick = { finish() }) }' >> "$MAIN_ACTIVITY"
+            echo '        }' >> "$MAIN_ACTIVITY"
+            echo '    }' >> "$MAIN_ACTIVITY"
+            echo '}' >> "$MAIN_ACTIVITY"
+            echo '@Composable' >> "$MAIN_ACTIVITY"
+            echo 'fun AiScriptMakerScreen(onBackClick: () -> Unit) {' >> "$MAIN_ACTIVITY"
+            echo '    var topic by remember { mutableStateOf("") }' >> "$MAIN_ACTIVITY"
+            echo '    var selectedPlatform by remember { mutableStateOf("Insta Reel") }' >> "$MAIN_ACTIVITY"
+            echo '    var showResult by remember { mutableStateOf(false) }' >> "$MAIN_ACTIVITY"
+            echo '    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212)).padding(16.dp)) {' >> "$MAIN_ACTIVITY"
+            echo '        Row(verticalAlignment = Alignment.CenterVertically) {' >> "$MAIN_ACTIVITY"
+            echo '            IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }' >> "$MAIN_ACTIVITY"
+            echo '            Text("✨ AI Script & Idea Maker", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)' >> "$MAIN_ACTIVITY"
+            echo '        }' >> "$MAIN_ACTIVITY"
+            echo '        Spacer(modifier = Modifier.height(20.dp))' >> "$MAIN_ACTIVITY"
+            echo '        OutlinedTextField(' >> "$MAIN_ACTIVITY"
+            echo '            value = topic, onValueChange = { topic = it },' >> "$MAIN_ACTIVITY"
+            echo '            label = { Text("Enter your topic", color = Color.Gray) },' >> "$MAIN_ACTIVITY"
+            echo '            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color(0xFF00E676), unfocusedIndicatorColor = Color.DarkGray, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White),' >> "$MAIN_ACTIVITY"
+            echo '            modifier = Modifier.fillMaxWidth()' >> "$MAIN_ACTIVITY"
+            echo '        )' >> "$MAIN_ACTIVITY"
+            echo '        Spacer(modifier = Modifier.height(16.dp))' >> "$MAIN_ACTIVITY"
+            echo '        Text("Select Platform:", color = Color.White, fontSize = 16.sp)' >> "$MAIN_ACTIVITY"
+            echo '        Spacer(modifier = Modifier.height(8.dp))' >> "$MAIN_ACTIVITY"
+            echo '        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {' >> "$MAIN_ACTIVITY"
+            echo '            listOf("Insta Reel", "YouTube", "Shorts").forEach { platform ->' >> "$MAIN_ACTIVITY"
+            echo '                Button(' >> "$MAIN_ACTIVITY"
+            echo '                    onClick = { selectedPlatform = platform },' >> "$MAIN_ACTIVITY"
+            echo '                    colors = ButtonDefaults.buttonColors(containerColor = if (selectedPlatform == platform) Color(0xFF00E676) else Color.DarkGray)' >> "$MAIN_ACTIVITY"
+            echo '                ) { Text(platform, color = if (selectedPlatform == platform) Color.Black else Color.White) }' >> "$MAIN_ACTIVITY"
+            echo '            }' >> "$MAIN_ACTIVITY"
+            echo '        }' >> "$MAIN_ACTIVITY"
+            echo '        Spacer(modifier = Modifier.height(32.dp))' >> "$MAIN_ACTIVITY"
+            echo '        Button(' >> "$MAIN_ACTIVITY"
+            echo '            onClick = { showResult = true }, modifier = Modifier.fillMaxWidth().height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676)), shape = RoundedCornerShape(12.dp)' >> "$MAIN_ACTIVITY"
+            echo '        ) { Text("Generate Magic 🪄", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }' >> "$MAIN_ACTIVITY"
+            echo '        Spacer(modifier = Modifier.height(24.dp))' >> "$MAIN_ACTIVITY"
+            echo '        if (showResult && topic.isNotEmpty()) {' >> "$MAIN_ACTIVITY"
+            echo '            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)), modifier = Modifier.fillMaxWidth()) {' >> "$MAIN_ACTIVITY"
+            echo '                Column(modifier = Modifier.padding(16.dp)) {' >> "$MAIN_ACTIVITY"
+            echo '                    Text("🪝 Hook: Are you making this simple mistake?", color = Color(0xFF00E676), fontWeight = FontWeight.Bold)' >> "$MAIN_ACTIVITY"
+            echo '                    Spacer(modifier = Modifier.height(8.dp))' >> "$MAIN_ACTIVITY"
+            echo '                    Text("📜 Script: Welcome back! Today we talk about $topic...", color = Color.White)' >> "$MAIN_ACTIVITY"
+            echo '                    Spacer(modifier = Modifier.height(8.dp))' >> "$MAIN_ACTIVITY"
+            echo '                    Text("🏷️ Tags: #$topic #viral", color = Color.Cyan)' >> "$MAIN_ACTIVITY"
+            echo '                }' >> "$MAIN_ACTIVITY"
+            echo '            }' >> "$MAIN_ACTIVITY"
+            echo '        }' >> "$MAIN_ACTIVITY"
+            echo '    }' >> "$MAIN_ACTIVITY"
+            echo '}' >> "$MAIN_ACTIVITY"
           fi
 
       - name: Set up JDK 17
