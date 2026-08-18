@@ -19,11 +19,117 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: Inject New UI Design (Smart Trick)
+      - name: The Brahmastra (Rewrite App completely to our UI)
         run: |
-          # ఇది మీరు విడిగా అప్‌లోడ్ చేసిన కొత్త డిజైన్‌ని ఆటోమేటిక్ గా పాత యాప్ లోపలికి పంపేస్తుంది!
-          if [ -f MainActivity.kt ]; then
-            find . -name "MainActivity.kt" -not -path "./MainActivity.kt" -exec cp MainActivity.kt {} \;
+          MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
+          if [ -n "$MAIN_ACTIVITY" ]; then
+            # పాత కోడ్ లో ఉన్న ప్యాకేజీ పేరును సేవ్ చేయడం
+            PACKAGE_NAME=$(grep "^package " "$MAIN_ACTIVITY" | head -n 1)
+            
+            # పాత కోడ్ మొత్తం తీసేసి, ఫస్ట్ మన కొత్త డిజైన్ ఓపెన్ అయ్యేలా చేయడం
+            echo "$PACKAGE_NAME" > "$MAIN_ACTIVITY"
+            cat << 'EOF' >> "$MAIN_ACTIVITY"
+            
+            import android.os.Bundle
+            import androidx.activity.ComponentActivity
+            import androidx.activity.compose.setContent
+            import androidx.compose.foundation.background
+            import androidx.compose.foundation.layout.*
+            import androidx.compose.foundation.shape.RoundedCornerShape
+            import androidx.compose.material.icons.Icons
+            import androidx.compose.material.icons.filled.ArrowBack
+            import androidx.compose.material3.*
+            import androidx.compose.runtime.*
+            import androidx.compose.ui.Alignment
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.graphics.Color
+            import androidx.compose.ui.text.font.FontWeight
+            import androidx.compose.ui.unit.dp
+            import androidx.compose.ui.unit.sp
+
+            class MainActivity : ComponentActivity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    setContent { // ఇది యాప్ ఓపెన్ అవ్వగానే మన స్క్రీన్ చూపించే కమాండ్
+                        MaterialTheme {
+                            AiScriptMakerScreen(onBackClick = { finish() })
+                        }
+                    }
+                }
+            }
+
+            @Composable
+            fun AiScriptMakerScreen(onBackClick: () -> Unit) {
+                var topic by remember { mutableStateOf("") }
+                var selectedPlatform by remember { mutableStateOf("Insta Reel") }
+                var showResult by remember { mutableStateOf(false) }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF121212))
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                        Text(text = "✨ AI Script & Idea Maker", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    OutlinedTextField(
+                        value = topic,
+                        onValueChange = { topic = it },
+                        label = { Text("Enter your topic (e.g., Weight loss)", color = Color.Gray) },
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color(0xFF00E676),
+                            unfocusedIndicatorColor = Color.DarkGray,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Select Platform:", color = Color.White, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Insta Reel", "YouTube", "Shorts").forEach { platform ->
+                            Button(
+                                onClick = { selectedPlatform = platform },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (selectedPlatform == platform) Color(0xFF00E676) else Color.DarkGray
+                                )
+                            ) {
+                                Text(platform, color = if (selectedPlatform == platform) Color.Black else Color.White)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = { showResult = true },
+                        modifier = Modifier.fillMaxWidth().height(55.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Generate Magic 🪄", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                    if (showResult && topic.isNotEmpty()) {
+                        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)), modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("🪝 Hook: Are you making this simple mistake?", color = Color(0xFF00E676), fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("📜 Script: Welcome back! Today we talk about $topic...", color = Color.White)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("🏷️ Tags: #$topic #viral", color = Color.Cyan)
+                            }
+                        }
+                    }
+                }
+            }
+            EOF
           fi
 
       - name: Set up JDK 17
@@ -35,20 +141,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Setup Virtual Display
+      - name: Build APK Cleanly
         run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb
-          Xvfb :99 -screen 0 1024x768x24 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
-      - name: Fix Black Screen Runtime Crash
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > local.properties
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-          
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
@@ -58,16 +152,11 @@ jobs:
           if [ -f gradle/libs.versions.toml ]; then
             sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
           fi
-          if [ -f google-services.json ]; then
-            mkdir -p app
-            mv google-services.json app/
-          fi
           
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
-
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+          
+          gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
