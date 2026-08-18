@@ -19,6 +19,13 @@ jobs:
             unzip -q *.zip
           fi
 
+      - name: Inject New UI Design (Smart Trick)
+        run: |
+          # ఇది మీరు విడిగా అప్‌లోడ్ చేసిన కొత్త డిజైన్‌ని ఆటోమేటిక్ గా పాత యాప్ లోపలికి పంపేస్తుంది!
+          if [ -f MainActivity.kt ]; then
+            find . -name "MainActivity.kt" -not -path "./MainActivity.kt" -exec cp MainActivity.kt {} \;
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -39,34 +46,26 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # 1. CLEAN API KEY INJECTION (Removed quotes that caused crashes)
           echo "GEMINI_API_KEY=$GEMINI_API_KEY" > local.properties
           echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
           
-          # 2. Memory & AndroidX Fix
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Djava.awt.headless=false" > ~/.gradle/gradle.properties
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
-          # 3. FIX SCRIPT COMPILATION ERROR
           find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
-          
-          # 4. FIX AGP VERSION
           if [ -f gradle/libs.versions.toml ]; then
             sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
           fi
-          
-          # 5. Move google-services.json safely
           if [ -f google-services.json ]; then
             mkdir -p app
             mv google-services.json app/
           fi
           
-          # 6. Keystore Fix
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
-          
+
       - name: Build APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
