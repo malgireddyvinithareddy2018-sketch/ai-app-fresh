@@ -19,7 +19,7 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: The Brahmastra (Bullet-proof UI Rewrite & Bypass Old Crashes)
+      - name: The Brahmastra (Bullet-proof UI Rewrite & Safe Crash Fix)
         run: |
           # 1. Rewrite MainActivity (మన కొత్త డిజైన్)
           MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
@@ -93,10 +93,17 @@ jobs:
             echo '}' >> "$MAIN_ACTIVITY"
           fi
           
-          # 2. Fix the crash: Remove old Application connections (ఇదే అసలైన మ్యాజిక్, క్రాష్ అవ్వకుండా ఆపుతుంది)
-          MANIFEST=$(find . -name "AndroidManifest.xml" | head -n 1)
-          if [ -n "$MANIFEST" ]; then
-            sed -i 's/android:name="\.[a-zA-Z0-9_]*"//g' "$MANIFEST"
+          # 2. SAFE Fix for the crash: Just empty the MainApplication file
+          APP_CLASS=$(find . -name "MainApplication.kt" | head -n 1)
+          if [ -n "$APP_CLASS" ]; then
+            PACKAGE_NAME=$(grep "^package " "$APP_CLASS" | head -n 1)
+            echo "$PACKAGE_NAME" > "$APP_CLASS"
+            echo 'import android.app.Application' >> "$APP_CLASS"
+            echo 'class MainApplication : Application() {' >> "$APP_CLASS"
+            echo '    override fun onCreate() {' >> "$APP_CLASS"
+            echo '        super.onCreate()' >> "$APP_CLASS"
+            echo '    }' >> "$APP_CLASS"
+            echo '}' >> "$APP_CLASS"
           fi
 
       - name: Set up JDK 17
