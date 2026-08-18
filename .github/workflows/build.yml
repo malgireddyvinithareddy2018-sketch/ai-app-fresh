@@ -19,8 +19,9 @@ jobs:
             unzip -q *.zip
           fi
 
-      - name: The Brahmastra (Bullet-proof UI Rewrite)
+      - name: The Brahmastra (Bullet-proof UI Rewrite & Bypass Old Crashes)
         run: |
+          # 1. Rewrite MainActivity (మన కొత్త డిజైన్)
           MAIN_ACTIVITY=$(find . -name "MainActivity.kt" | head -n 1)
           if [ -n "$MAIN_ACTIVITY" ]; then
             PACKAGE_NAME=$(grep "^package " "$MAIN_ACTIVITY" | head -n 1)
@@ -57,7 +58,7 @@ jobs:
             echo '    Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212)).padding(16.dp)) {' >> "$MAIN_ACTIVITY"
             echo '        Row(verticalAlignment = Alignment.CenterVertically) {' >> "$MAIN_ACTIVITY"
             echo '            IconButton(onClick = onBackClick) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }' >> "$MAIN_ACTIVITY"
-            echo '            Text("✨ AI Script & Idea Maker", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)' >> "$MAIN_ACTIVITY"
+            echo '            Text("✨ AI Script Maker", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)' >> "$MAIN_ACTIVITY"
             echo '        }' >> "$MAIN_ACTIVITY"
             echo '        Spacer(modifier = Modifier.height(20.dp))' >> "$MAIN_ACTIVITY"
             echo '        OutlinedTextField(' >> "$MAIN_ACTIVITY"
@@ -71,16 +72,11 @@ jobs:
             echo '        Spacer(modifier = Modifier.height(8.dp))' >> "$MAIN_ACTIVITY"
             echo '        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {' >> "$MAIN_ACTIVITY"
             echo '            listOf("Insta Reel", "YouTube", "Shorts").forEach { platform ->' >> "$MAIN_ACTIVITY"
-            echo '                Button(' >> "$MAIN_ACTIVITY"
-            echo '                    onClick = { selectedPlatform = platform },' >> "$MAIN_ACTIVITY"
-            echo '                    colors = ButtonDefaults.buttonColors(containerColor = if (selectedPlatform == platform) Color(0xFF00E676) else Color.DarkGray)' >> "$MAIN_ACTIVITY"
-            echo '                ) { Text(platform, color = if (selectedPlatform == platform) Color.Black else Color.White) }' >> "$MAIN_ACTIVITY"
+            echo '                Button(onClick = { selectedPlatform = platform }, colors = ButtonDefaults.buttonColors(containerColor = if (selectedPlatform == platform) Color(0xFF00E676) else Color.DarkGray)) { Text(platform, color = if (selectedPlatform == platform) Color.Black else Color.White) }' >> "$MAIN_ACTIVITY"
             echo '            }' >> "$MAIN_ACTIVITY"
             echo '        }' >> "$MAIN_ACTIVITY"
             echo '        Spacer(modifier = Modifier.height(32.dp))' >> "$MAIN_ACTIVITY"
-            echo '        Button(' >> "$MAIN_ACTIVITY"
-            echo '            onClick = { showResult = true }, modifier = Modifier.fillMaxWidth().height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676)), shape = RoundedCornerShape(12.dp)' >> "$MAIN_ACTIVITY"
-            echo '        ) { Text("Generate Magic 🪄", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }' >> "$MAIN_ACTIVITY"
+            echo '        Button(onClick = { showResult = true }, modifier = Modifier.fillMaxWidth().height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676)), shape = RoundedCornerShape(12.dp)) { Text("Generate Magic 🪄", color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }' >> "$MAIN_ACTIVITY"
             echo '        Spacer(modifier = Modifier.height(24.dp))' >> "$MAIN_ACTIVITY"
             echo '        if (showResult && topic.isNotEmpty()) {' >> "$MAIN_ACTIVITY"
             echo '            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)), modifier = Modifier.fillMaxWidth()) {' >> "$MAIN_ACTIVITY"
@@ -95,6 +91,12 @@ jobs:
             echo '        }' >> "$MAIN_ACTIVITY"
             echo '    }' >> "$MAIN_ACTIVITY"
             echo '}' >> "$MAIN_ACTIVITY"
+          fi
+          
+          # 2. Fix the crash: Remove old Application connections (ఇదే అసలైన మ్యాజిక్, క్రాష్ అవ్వకుండా ఆపుతుంది)
+          MANIFEST=$(find . -name "AndroidManifest.xml" | head -n 1)
+          if [ -n "$MANIFEST" ]; then
+            sed -i 's/android:name="\.[a-zA-Z0-9_]*"//g' "$MANIFEST"
           fi
 
       - name: Set up JDK 17
@@ -114,9 +116,6 @@ jobs:
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
           find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
-          if [ -f gradle/libs.versions.toml ]; then
-            sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
-          fi
           
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000 -dname "CN=Android"
           find . -name "build.gradle*" -exec sed -i 's/signingConfig = signingConfigs.getByName("debugConfig")//g' {} +
