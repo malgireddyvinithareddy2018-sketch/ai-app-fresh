@@ -35,14 +35,13 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Ultimate Clean Fix (Real Keys Everywhere & API 36)
+      - name: Fix Black Screen Runtime Crash
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # 1. Real API Key Setup (Bulletproof - putting it everywhere)
+          # 1. CLEAN API KEY INJECTION (Removed quotes that caused crashes)
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > local.properties
           echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> local.properties
-          echo "GEMINI_API_KEY=\"$GEMINI_API_KEY\"" >> local.properties
           
           # 2. Memory & AndroidX Fix
           mkdir -p ~/.gradle
@@ -50,7 +49,7 @@ jobs:
           echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
           echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
           
-          # 3. FIX SCRIPT COMPILATION ERROR (Force API 36)
+          # 3. FIX SCRIPT COMPILATION ERROR
           find . -name "build.gradle.kts" -exec sed -i 's/compileSdk.*/compileSdk = 36/g' {} +
           
           # 4. FIX AGP VERSION
@@ -58,7 +57,7 @@ jobs:
             sed -i 's/^agp = .*/agp = "8.9.1"/' gradle/libs.versions.toml
           fi
           
-          # 5. Move google-services.json to app folder if uploaded to root
+          # 5. Move google-services.json safely
           if [ -f google-services.json ]; then
             mkdir -p app
             mv google-services.json app/
