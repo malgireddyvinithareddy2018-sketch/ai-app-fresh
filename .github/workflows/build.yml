@@ -35,12 +35,14 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
-      - name: Ultimate Clean Fix (Real Keys & API 36)
+      - name: Ultimate Clean Fix (Real Keys Everywhere & API 36)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # 1. Real API Key Setup
+          # 1. Real API Key Setup (Bulletproof - putting it everywhere)
           echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" >> local.properties
+          echo "GEMINI_API_KEY=\"$GEMINI_API_KEY\"" >> local.properties
           
           # 2. Memory & AndroidX Fix
           mkdir -p ~/.gradle
@@ -74,4 +76,3 @@ jobs:
         with:
           name: app-debug-apk
           path: "**/*.apk"
-
